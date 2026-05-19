@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<button onclick="pay()">Pay</button>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+
+async function pay() {
+
+  var options = {
+
+    key: "rzp_test_Sm1qLW1m7Dbs3M",
+
+    amount: 100,
+
+    currency: "INR",
+
+    name: "Flowra",
+
+    order_id: "order_Sm2CtrBVIWET8T",
+
+    handler: function (response) {
+
+      alert("SUCCESS");
+
+      console.log(response);
+    }
+  };
+
+  var rzp = new Razorpay(options);
+
+  rzp.open();
+}
+
+</script>
+
+</body>
+</html>

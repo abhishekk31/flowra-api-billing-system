@@ -1,0 +1,202 @@
+/* NAVBAR */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid #eee;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.logo span {
+  color: #555;
+}
+
+.nav-link {
+  margin-right: 15px;
+  cursor: pointer;
+}
+
+.nav-btn {
+  background: black;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.hero h1 {
+  font-size: 36px;
+  margin-bottom: 15px;
+}
+
+.hero span {
+  color: black;
+}
+
+.hero p {
+  color: gray;
+  margin-bottom: 20px;
+}
+
+.hero-btn {
+  background: black;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+}
+
+/* CARDS */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  padding: 40px;
+}
+
+.card {
+  border: 1px solid #eee;
+  padding: 20px;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 5px 20px rgba(0,0,0,0.08);
+}
+
+.card i {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-box {
+  width: 350px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+}
+
+.close-btn {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  cursor: pointer;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.modal-header i {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+/* INPUT */
+.input-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.input-box i {
+  margin-right: 8px;
+  color: gray;
+}
+
+.input-box input {
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+.input-select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.btn-primary {
+  width: 100%;
+  background: black;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+}
+/* MODAL ANIMATION */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: white;
+  color: black;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  z-index: 9999;
+}
+
+/*hero*/
+.hero-bg {
+  position: relative;
+  background-image: url('../assets/BaKGroundWhite.jpg'); /* 🔥 replace with your image path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+}
+
+
+.card-section{
+
+  margin-top: 30px;
+
+}
