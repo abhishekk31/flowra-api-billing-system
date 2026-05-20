@@ -500,6 +500,28 @@ export default function ConsumerDashboard() {
 
     setSubLoading(plan._id);
 
+    // FREE PLAN
+    if (Number(plan.price) === 0) {
+
+      await handleSubscribe(plan._id);
+
+      setConfirmSubscribe({
+        show: false,
+        planId: null,
+        already: false,
+        plan: null,
+        api: null
+      });
+
+      showToast(
+        "Free Plan Activated!"
+      );
+
+      setSubLoading(null);
+
+      return;
+    }
+
     // CREATE ORDER
     const orderRes = await fetch(
       `${import.meta.env.VITE_API_URL}/CreatOrder`,
@@ -520,13 +542,15 @@ export default function ConsumerDashboard() {
       }
     );
 
-    const orderData = await orderRes.json();
+    const orderData =
+      await orderRes.json();
 
     // ERROR CHECK
     if (!orderRes.ok) {
 
       showToast(
-        orderData.message || "Order creation failed",
+        orderData.message ||
+        "Order creation failed",
         "error"
       );
 
@@ -540,61 +564,81 @@ export default function ConsumerDashboard() {
 
       key: orderData.key,
 
-      amount: orderData.order.amount,
+      amount:
+        orderData.order.amount,
 
       currency: "INR",
 
       name: "Flowra API",
 
-      description: "API Subscription",
+      description:
+        "API Subscription",
 
-      order_id: orderData.order.id,
+      order_id:
+        orderData.order.id,
 
-      handler: async function (response) {
+      handler: async function (
+        response
+      ) {
 
         try {
 
           // VERIFY PAYMENT
-          const verifyRes = await fetch(
-            `${import.meta.env.VITE_API_URL}/verifypayment`,
-            {
-              method: "POST",
+          const verifyRes =
+            await fetch(
+              `${import.meta.env.VITE_API_URL}/verifypayment`,
+              {
 
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-              },
+                method: "POST",
 
-              body: JSON.stringify({
+                headers: {
+                  "Content-Type":
+                    "application/json",
 
-                razorpay_order_id:
-                  response.razorpay_order_id,
+                  Authorization:
+                    `Bearer ${token}`
+                },
 
-                razorpay_payment_id:
-                  response.razorpay_payment_id,
+                body: JSON.stringify({
 
-                razorpay_signature:
-                  response.razorpay_signature
+                  razorpay_order_id:
+                    response.razorpay_order_id,
 
-              })
-            }
-          );
+                  razorpay_payment_id:
+                    response.razorpay_payment_id,
+
+                  razorpay_signature:
+                    response.razorpay_signature
+
+                })
+              }
+            );
 
           const verifyData =
             await verifyRes.json();
 
-          if (verifyData.success) {
+          if (
+            verifyData.success
+          ) {
 
             // CREATE SUBSCRIPTION
-            await handleSubscribe(plan._id);
+            await handleSubscribe(
+              plan._id
+            );
 
             // CLOSE MODAL
             setConfirmSubscribe({
+
               show: false,
+
               planId: null,
+
               already: false,
+
               plan: null,
+
               api: null
+
             });
 
             showToast(
@@ -637,9 +681,11 @@ export default function ConsumerDashboard() {
 
       prefill: {
 
-        name: user?.name || "",
+        name:
+          user?.name || "",
 
-        email: user?.email || ""
+        email:
+          user?.email || ""
       },
 
       theme: {
@@ -649,7 +695,9 @@ export default function ConsumerDashboard() {
 
     // OPEN RAZORPAY
     const razor =
-      new window.Razorpay(options);
+      new window.Razorpay(
+        options
+      );
 
     razor.open();
 
