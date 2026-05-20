@@ -23,7 +23,7 @@ exports.auth = async (req, res, next) => {
       });
     }
 
-    req.user = user; // ✅ FULL USER OBJECT
+    req.user = user; 
     next();
 
   } catch (error) {
