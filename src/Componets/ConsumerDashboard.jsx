@@ -29,7 +29,14 @@ import {
   Layers,
   Shield,
   BarChart2,
-  Wifi
+  Wifi,
+  Menu,
+  X,
+  Package,
+  ExternalLink,
+  Tag,
+  Zap as ZapIcon,
+  Info
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -282,7 +289,6 @@ function GemModal({
               position: "relative", overflow: "hidden",
             }}
           >
-            {/* bg glow */}
             <motion.div
               animate={{ scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }}
               transition={{ repeat: Infinity, duration: 3 }}
@@ -341,42 +347,26 @@ function GemModal({
                 Go Back
               </button>
              {!isAlready && (
-
   <motion.button
     whileHover={{ scale: 1.03 }}
     whileTap={{ scale: 0.97 }}
-
     onClick={async () => {
-
       try {
-
         if (isUpgrade) {
-
           setSubLoading(confirmUpgrade.planId);
-
           await upgradeNow(confirmUpgrade.planId);
-
         } else {
-
           setSubLoading(confirmSubscribe.planId);
-
           await handlePayment(
             confirmSubscribe.plan,
             confirmSubscribe.api
           );
-
         }
-
       } finally {
-
         setSubLoading(null);
-
       }
-
     }}
-
     disabled={subLoading !== null}
-
     style={{
       flex: 1,
       padding: "14px 0",
@@ -395,13 +385,8 @@ function GemModal({
       gap: 8,
     }}
   >
-
-    {subLoading !== null
-      ? <GemSpinner size={20} />
-      : "Confirm"}
-
+    {subLoading !== null ? <GemSpinner size={20} /> : "Confirm"}
   </motion.button>
-
 )}
             </div>
           </motion.div>
@@ -410,6 +395,287 @@ function GemModal({
     </AnimatePresence>
   );
 }
+
+/* ─── EXPLORE: Empty Plans State ─────────────────────────────── */
+function NoPlansBadge() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "36px 24px",
+        textAlign: "center",
+        borderRadius: 16,
+        border: `1.5px dashed ${G.amber}55`,
+        background: `${G.amber}08`,
+        gap: 10,
+      }}
+    >
+      <div style={{
+        width: 48, height: 48, borderRadius: 14,
+        background: `${G.amber}18`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 4,
+      }}>
+        <Package size={22} color={G.amber} />
+      </div>
+      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: G.amber }}>No Plans Available Yet</p>
+      <p style={{ margin: 0, fontSize: 12, color: G.textSecondary, maxWidth: 220, lineHeight: 1.6 }}>
+        The provider hasn't created any subscription plans for this API yet. Check back soon.
+      </p>
+    </motion.div>
+  );
+}
+
+/* ─── EXPLORE: Plan Pill ─────────────────────────────────────── */
+function PlanPill({ plan, api, isSubscribed, subLoading, onSubscribe }) {
+  const isFree = Number(plan.price) === 0;
+  return (
+    <motion.div
+      whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(26,115,232,0.12)" }}
+      style={{
+        background: "#FFFFFF",
+        border: `1px solid ${G.border}`,
+        borderRadius: 16,
+        padding: "18px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        transition: "box-shadow 0.2s",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {isFree && (
+        <div style={{
+          position: "absolute", top: 10, right: 10,
+          fontSize: 9, fontWeight: 700, letterSpacing: 1,
+          background: `${G.teal}18`, color: G.teal,
+          padding: "3px 8px", borderRadius: 20,
+          textTransform: "uppercase",
+        }}>Free</div>
+      )}
+      <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: G.textMuted, fontWeight: 700 }}>
+        {plan.name}
+      </span>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        <span style={{ fontSize: 24, fontWeight: 700, color: G.textPrimary }}>
+          {isFree ? "Free" : `₹${plan.price}`}
+        </span>
+        {!isFree && <span style={{ fontSize: 12, color: G.textMuted }}>/mo</span>}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+        <Zap size={11} color={G.blue} />
+        <span style={{ fontSize: 12, color: G.textSecondary }}>{plan.requestLimit?.toLocaleString()} requests</span>
+      </div>
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        onClick={onSubscribe}
+        disabled={subLoading === plan._id || !api.isActive}
+        style={{
+          marginTop: 10, width: "100%", padding: "10px 0", borderRadius: 12, border: "none",
+          background: !api.isActive
+            ? "rgba(0,0,0,0.06)"
+            : isSubscribed
+              ? `${G.teal}18`
+              : G.blueGrad,
+          color: !api.isActive ? G.textMuted : isSubscribed ? G.teal : "#fff",
+          fontWeight: 700, fontSize: 13,
+          cursor: (!api.isActive || subLoading === plan._id) ? "not-allowed" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          boxShadow: (!api.isActive || isSubscribed) ? "none" : "0 4px 14px rgba(66,133,244,0.35)",
+          transition: "background 0.2s",
+        }}
+      >
+        {subLoading === plan._id
+          ? <GemSpinner size={16} />
+          : !api.isActive
+            ? "Unavailable"
+            : isSubscribed
+              ? <><CheckCircle2 size={13} /> Active</>
+              : "Subscribe"}
+      </motion.button>
+    </motion.div>
+  );
+}
+
+/* ─── EXPLORE: API Card ──────────────────────────────────────── */
+function ApiCard({ api, isSubscribed, subLoading, setConfirmSubscribe }) {
+  const hasPlans = api.plans && api.plans.length > 0;
+
+  return (
+    <motion.div
+      variants={staggerChild}
+      whileHover={{ y: -2 }}
+      style={{
+        background: "#FFFFFF",
+        border: `1px solid ${G.border}`,
+        borderRadius: 24,
+        overflow: "hidden",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+        transition: "box-shadow 0.2s",
+      }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.1)"}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.04)"}
+    >
+      {/* Card Header */}
+      <div style={{
+        padding: "24px 28px 20px",
+        borderBottom: `1px solid ${G.border}`,
+        display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12,
+        flexWrap: "wrap",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+          {/* Avatar */}
+          <div style={{
+            width: 52, height: 52, borderRadius: 16,
+            background: G.blueGrad,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 700, color: "#fff",
+            flexShrink: 0, letterSpacing: -1,
+          }}>
+            {api.name?.charAt(0)?.toUpperCase()}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: G.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {api.name}
+              </h3>
+              {/* Status badge */}
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
+                padding: "3px 10px", borderRadius: 20,
+                background: api.isActive ? `${G.teal}14` : `${G.red}14`,
+                color: api.isActive ? G.teal : G.red,
+                textTransform: "uppercase", flexShrink: 0,
+              }}>
+                <motion.div
+                  animate={api.isActive ? { scale: [1, 1.5, 1] } : {}}
+                  transition={{ repeat: Infinity, duration: 1.8 }}
+                  style={{ width: 5, height: 5, borderRadius: "50%", background: api.isActive ? G.teal : G.red }}
+                />
+                {api.isActive ? "Live" : "Down"}
+              </span>
+            </div>
+            {/* Endpoint row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                fontSize: 11, color: G.textMuted,
+                background: G.surfaceAlt,
+                border: `1px solid ${G.border}`,
+                padding: "2px 8px", borderRadius: 6,
+                fontFamily: "monospace",
+              }}>
+                <Code2 size={10} />
+                {api.endpoint}
+              </span>
+              {api.method && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
+                  color: G.blue,
+                  background: `${G.blue}12`,
+                  padding: "2px 8px", borderRadius: 6,
+                  textTransform: "uppercase",
+                }}>
+                  {api.method}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Plan count chip */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 5,
+          fontSize: 12, fontWeight: 600, color: G.textSecondary,
+          background: G.surfaceAlt, border: `1px solid ${G.border}`,
+          padding: "6px 12px", borderRadius: 20, flexShrink: 0,
+        }}>
+          <Tag size={12} />
+          {hasPlans ? `${api.plans.length} plan${api.plans.length > 1 ? "s" : ""}` : "No plans"}
+        </div>
+      </div>
+
+      {/* Plans section */}
+      <div style={{ padding: "20px 28px 24px" }}>
+        {!hasPlans ? (
+          <NoPlansBadge />
+        ) : (
+          <>
+            <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: G.textMuted, textTransform: "uppercase", letterSpacing: 1.2, display: "flex", alignItems: "center", gap: 5 }}>
+              <Tag size={11} /> Available Plans
+            </p>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: 12,
+            }}>
+              {api.plans.map(plan => (
+                <PlanPill
+                  key={plan._id}
+                  plan={plan}
+                  api={api}
+                  isSubscribed={isSubscribed}
+                  subLoading={subLoading}
+                  onSubscribe={() => {
+                    if (!api.isActive) return;
+                    setConfirmSubscribe({
+                      show: true,
+                      already: isSubscribed,
+                      planId: isSubscribed ? null : plan._id,
+                      plan,
+                      api,
+                    });
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Responsive styles ──────────────────────────────────────── */
+const responsiveStyles = `
+  @media (max-width: 768px) {
+    .main-layout { flex-direction: column !important; }
+    .sidebar { 
+      width: 100% !important; 
+      height: auto !important;
+      border-right: none !important;
+      border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+      flex-shrink: 0 !important;
+    }
+    .sidebar-nav { flex-direction: row !important; overflow-x: auto !important; padding: 4px 8px 8px !important; gap: 4px !important; }
+    .sidebar-logo { padding: 16px 20px 12px !important; }
+    .sidebar-logo-text { display: none !important; }
+    .sidebar-signout { display: none !important; }
+    .sidebar-mobile-bottom { display: none !important; }
+    .nav-btn-label { display: none !important; }
+    .nav-btn { padding: 10px 14px !important; border-radius: 12px !important; justify-content: center !important; }
+    .main-content { padding: 20px 16px !important; height: auto !important; flex: 1 !important; overflow-y: auto !important; }
+    .stat-grid { grid-template-columns: 1fr 1fr !important; }
+    .explore-header { flex-direction: column !important; align-items: stretch !important; }
+    .explore-search { width: 100% !important; }
+    .page-layout { height: 100dvh !important; overflow: hidden !important; flex-direction: column !important; }
+  }
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr !important; }
+    .main-content { padding: 16px 12px !important; }
+  }
+  @media (min-width: 769px) {
+    .page-layout { height: 100vh !important; overflow: hidden !important; }
+    .main-content { overflow-y: auto !important; }
+  }
+`;
 
 /* ─── MAIN COMPONENT ─────────────────────────────────────────── */
 export default function ConsumerDashboard() {
@@ -428,12 +694,9 @@ export default function ConsumerDashboard() {
   const [usageLoading, setUsageLoading] = useState(false);
   const [confirmSubscribe, setConfirmSubscribe] = useState({ show: false, planId: null, already: false });
   const [search, setSearch] = useState("");
- 
 
   const token = localStorage.getItem("token");
-  const user = JSON.parse(
-    localStorage.getItem("user") || "{}"
-  );
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const totalSubs = subscriptions.length;
   const totalUsage = subscriptions.reduce((acc, sub) => acc + (sub.usedRequests || 0), 0);
@@ -492,228 +755,63 @@ export default function ConsumerDashboard() {
     }
   };
 
-
-  //handle payment
   const handlePayment = async (plan, api) => {
-
-  try {
-
-    setSubLoading(plan._id);
-
-    // FREE PLAN
-    if (Number(plan.price) === 0) {
-
-      await handleSubscribe(plan._id);
-
-      setConfirmSubscribe({
-        show: false,
-        planId: null,
-        already: false,
-        plan: null,
-        api: null
-      });
-
-      showToast(
-        "Free Plan Activated!"
-      );
-
-      setSubLoading(null);
-
-      return;
-    }
-
-    // CREATE ORDER
-    const orderRes = await fetch(
-      `${import.meta.env.VITE_API_URL}/CreatOrder`,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-
-        body: JSON.stringify({
-          amount: plan.price,
-          providerId: api.owner,
-          apiId: api._id,
-          planId: plan._id
-        })
-      }
-    );
-
-    const orderData =
-      await orderRes.json();
-
-    // ERROR CHECK
-    if (!orderRes.ok) {
-
-      showToast(
-        orderData.message ||
-        "Order creation failed",
-        "error"
-      );
-
-      setSubLoading(null);
-
-      return;
-    }
-
-    // RAZORPAY OPTIONS
-    const options = {
-
-      key: orderData.key,
-
-      amount:
-        orderData.order.amount,
-
-      currency: "INR",
-
-      name: "Flowra API",
-
-      description:
-        "API Subscription",
-
-      order_id:
-        orderData.order.id,
-
-      handler: async function (
-        response
-      ) {
-
-        try {
-
-          // VERIFY PAYMENT
-          const verifyRes =
-            await fetch(
-              `${import.meta.env.VITE_API_URL}/verifypayment`,
-              {
-
-                method: "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-
-                  Authorization:
-                    `Bearer ${token}`
-                },
-
-                body: JSON.stringify({
-
-                  razorpay_order_id:
-                    response.razorpay_order_id,
-
-                  razorpay_payment_id:
-                    response.razorpay_payment_id,
-
-                  razorpay_signature:
-                    response.razorpay_signature
-
-                })
-              }
-            );
-
-          const verifyData =
-            await verifyRes.json();
-
-          if (
-            verifyData.success
-          ) {
-
-            // CREATE SUBSCRIPTION
-            await handleSubscribe(
-              plan._id
-            );
-
-            // CLOSE MODAL
-            setConfirmSubscribe({
-
-              show: false,
-
-              planId: null,
-
-              already: false,
-
-              plan: null,
-
-              api: null
-
-            });
-
-            showToast(
-              "Payment Successful!"
-            );
-
-          } else {
-
-            showToast(
-              "Payment verification failed",
-              "error"
-            );
-          }
-
-        } catch (err) {
-
-          console.log(err);
-
-          showToast(
-            "Verification failed",
-            "error"
-          );
-        }
-
+    try {
+      setSubLoading(plan._id);
+      if (Number(plan.price) === 0) {
+        await handleSubscribe(plan._id);
+        setConfirmSubscribe({ show: false, planId: null, already: false, plan: null, api: null });
+        showToast("Free Plan Activated!");
         setSubLoading(null);
-      },
-
-      modal: {
-
-        ondismiss: function () {
-
-          setSubLoading(null);
-
-          showToast(
-            "Payment cancelled",
-            "error"
-          );
-        }
-      },
-
-      prefill: {
-
-        name:
-          user?.name || "",
-
-        email:
-          user?.email || ""
-      },
-
-      theme: {
-        color: "#1A73E8"
+        return;
       }
-    };
-
-    // OPEN RAZORPAY
-    const razor =
-      new window.Razorpay(
-        options
-      );
-
-    razor.open();
-
-  } catch (error) {
-
-    console.log(error);
-
-    setSubLoading(null);
-
-    showToast(
-      "Payment failed",
-      "error"
-    );
-  }
-};
-
+      const orderRes = await fetch(`${import.meta.env.VITE_API_URL}/CreatOrder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: plan.price, providerId: api.owner, apiId: api._id, planId: plan._id })
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) { showToast(orderData.message || "Order creation failed", "error"); setSubLoading(null); return; }
+      const options = {
+        key: orderData.key, amount: orderData.order.amount, currency: "INR",
+        name: "Flowra API", description: "API Subscription", order_id: orderData.order.id,
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/verifypayment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              await handleSubscribe(plan._id);
+              setConfirmSubscribe({ show: false, planId: null, already: false, plan: null, api: null });
+              showToast("Payment Successful!");
+            } else {
+              showToast("Payment verification failed", "error");
+            }
+          } catch (err) {
+            console.log(err);
+            showToast("Verification failed", "error");
+          }
+          setSubLoading(null);
+        },
+        modal: { ondismiss: function () { setSubLoading(null); showToast("Payment cancelled", "error"); } },
+        prefill: { name: user?.name || "", email: user?.email || "" },
+        theme: { color: "#1A73E8" }
+      };
+      const razor = new window.Razorpay(options);
+      razor.open();
+    } catch (error) {
+      console.log(error);
+      setSubLoading(null);
+      showToast("Payment failed", "error");
+    }
+  };
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -779,7 +877,6 @@ export default function ConsumerDashboard() {
     }
   };
 
-  /* ── Full page loader ── */
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100vh", alignItems: "center", justifyContent: "center", background: "#F8F9FA", gap: 20 }}>
@@ -803,674 +900,568 @@ export default function ConsumerDashboard() {
     { id: "settings", icon: Settings, label: "Settings" },
   ];
 
+  const filteredApis = apis.filter(api => api.name.toLowerCase().includes(search.toLowerCase()));
+
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#F8F9FA", overflow: "hidden", fontFamily: "'Google Sans', 'Segoe UI', sans-serif" }}>
-
-      {/* ── SIDEBAR ── */}
-      <motion.div
-        initial={{ x: -280 }}
-        animate={{ x: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        style={{
-          width: 260, background: "#FFFFFF",
-          borderRight: `1px solid ${G.border}`,
-          display: "flex", flexDirection: "column", justifyContent: "space-between",
-          flexShrink: 0, zIndex: 10,
-        }}
+    <>
+      <style>{responsiveStyles}</style>
+      <div
+        className="main-layout page-layout"
+        style={{ display: "flex", background: "#F8F9FA", fontFamily: "'Google Sans', 'Segoe UI', sans-serif" }}
       >
-        <div>
-          <FlowraLogo />
+        {/* ── SIDEBAR ── */}
+        <motion.div
+          className="sidebar"
+          initial={{ x: -280 }}
+          animate={{ x: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          style={{
+            width: 260, background: "#FFFFFF",
+            borderRight: `1px solid ${G.border}`,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+            flexShrink: 0, zIndex: 10,
+          }}
+        >
+          <div>
+            <div className="sidebar-logo">
+              <FlowraLogo />
+            </div>
 
-          <nav style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-            {navItems.map((tab, i) => {
-              const active = activeTab === tab.id;
-              return (
-                <motion.button
-                  key={tab.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 + 0.1 }}
-                  onClick={() => { setActiveTab(tab.id); tab.action?.(); }}
-                  whileHover={{ x: 3 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "11px 16px", borderRadius: 14, border: "none",
-                    background: active ? "rgba(138,180,248,0.12)" : "transparent",
-                    color: active ? G.blue : G.textSecondary,
-                    fontWeight: active ? 600 : 500, fontSize: 14,
-                    cursor: "pointer", textAlign: "left", width: "100%",
-                    transition: "all 0.18s", position: "relative",
-                  }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; e.currentTarget.style.color = G.textPrimary; } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = G.textSecondary; } }}
-                >
-                  {active && (
-                    <motion.div
-                      layoutId="sidebarPill"
-                      style={{
-                        position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
-                        width: 3, height: 20, borderRadius: 4, background: G.blue,
-                      }}
-                    />
-                  )}
-                  <tab.icon size={18} />
-                  {tab.label}
-                </motion.button>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div style={{ padding: "16px 12px", borderTop: `1px solid ${G.border}` }}>
-          <motion.button
-            whileHover={{ x: 3 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={handleLogout}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              width: "100%", padding: "11px 16px", borderRadius: 14, border: "none",
-              background: "transparent", color: G.red, fontWeight: 500, fontSize: 14,
-              cursor: "pointer",
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = `${G.red}12`}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-          >
-            <LogOut size={18} /> Sign Out
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* ── MAIN CONTENT ── */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "40px 48px", scrollbarWidth: "thin", scrollbarColor: `${G.border} transparent` }}>
-        <AnimatePresence mode="wait">
-
-          {/* ── DASHBOARD TAB ── */}
-          {activeTab === "dashboard" && (
-            <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <motion.header initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 36 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                  <motion.div
-                    animate={{ rotate: [0, 20, -20, 0] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                  >
-                    <Sparkles size={22} color={G.blue} />
-                  </motion.div>
-                  <h1 style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: 0 }}>Welcome Back</h1>
-                </div>
-                <p style={{ color: G.textSecondary, margin: 0, fontSize: 15 }}>Here's what's happening with your APIs today.</p>
-              </motion.header>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 28 }}>
-                <StatCard label="Total Subscriptions" value={totalSubs} color={G.blue} icon={Layers} delay={0} />
-                <StatCard label="Total Usage" value={totalUsage} color={G.purple} icon={TrendingUp} delay={0.08} />
-                <StatCard label="Active APIs" value={activeSubs} color={G.teal} icon={Wifi} delay={0.16} />
-              </div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.24 }}
-                style={{
-                  background: G.surfaceAlt, border: `1px solid ${G.border}`,
-                  borderRadius: 24, padding: "28px 32px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: `${G.blue}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Activity size={16} color={G.blue} />
-                  </div>
-                  <h2 style={{ fontSize: 16, fontWeight: 600, color: G.textPrimary, margin: 0 }}>Recent Activity</h2>
-                </div>
-                {recentSubs.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "40px 0" }}>
-                    <Bell size={40} color={G.textMuted} style={{ marginBottom: 12 }} />
-                    <p style={{ color: G.textMuted, margin: 0 }}>No recent subscriptions found.</p>
-                  </div>
-                ) : (
-                  <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {recentSubs.map((sub) => (
-                      <motion.div
-                        key={sub._id}
-                        variants={staggerChild}
-                        whileHover={{ x: 4 }}
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "space-between",
-                          padding: "14px 16px", borderRadius: 14,
-                          border: `1px solid transparent`,
-                          cursor: "default", transition: "all 0.2s",
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; e.currentTarget.style.borderColor = G.border; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                          <div style={{
-                            width: 40, height: 40, borderRadius: 12,
-                            background: G.blueGrad,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 16, fontWeight: 700, color: "#fff",
-                          }}>
-                            {sub.api?.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <p style={{ margin: 0, fontWeight: 600, color: G.textPrimary, fontSize: 14 }}>{sub.api?.name}</p>
-                            <p style={{ margin: 0, fontSize: 11, color: G.blue, textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{sub.plan?.name}</p>
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 12, color: G.textMuted }}>{new Date(sub.expiresAt).toLocaleDateString()}</span>
-                          <ChevronRight size={14} color={G.textMuted} />
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* ── EXPLORE TAB ── */}
-          {activeTab === "explore" && (
-            <motion.div key="explore" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, marginBottom: 32, flexWrap: "wrap" }}>
-                <motion.h1 initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: 0 }}>
-                  Explore Marketplace
-                </motion.h1>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  style={{ position: "relative", width: 340 }}
-                >
-                  <Search style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} size={16} color={G.textMuted} />
-                  <input
-                    type="text"
-                    placeholder="Search APIs..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
+            <nav className="sidebar-nav" style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+              {navItems.map((tab, i) => {
+                const active = activeTab === tab.id;
+                return (
+                  <motion.button
+                    key={tab.id}
+                    className="nav-btn"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06 + 0.1 }}
+                    onClick={() => { setActiveTab(tab.id); tab.action?.(); }}
+                    whileHover={{ x: 3 }}
+                    whileTap={{ scale: 0.98 }}
                     style={{
-                      width: "100%", background: G.surfaceAlt,
-                      border: `1px solid ${G.border}`, borderRadius: 14,
-                      padding: "11px 16px 11px 40px", color: G.textPrimary,
-                      fontSize: 14, outline: "none", boxSizing: "border-box",
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "11px 16px", borderRadius: 14, border: "none",
+                      background: active ? "rgba(138,180,248,0.12)" : "transparent",
+                      color: active ? G.blue : G.textSecondary,
+                      fontWeight: active ? 600 : 500, fontSize: 14,
+                      cursor: "pointer", textAlign: "left", width: "100%",
+                      transition: "all 0.18s", position: "relative",
                     }}
-                    onFocus={e => e.target.style.borderColor = G.blue + "66"}
-                    onBlur={e => e.target.style.borderColor = G.border}
-                  />
-                </motion.div>
-              </div>
-
-              <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {apis.filter(api => api.name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                  <motion.div
-                    variants={staggerChild}
-                    style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "80px 40px", textAlign: "center" }}
+                    onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; e.currentTarget.style.color = G.textPrimary; } }}
+                    onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = G.textSecondary; } }}
                   >
-                    <Search size={44} color={G.textMuted} style={{ marginBottom: 16 }} />
-                    <p style={{ color: G.textMuted, fontSize: 16, margin: 0 }}>No APIs match your search.</p>
-                  </motion.div>
-                ) : (
-                  apis
-                    .filter(api => api.name.toLowerCase().includes(search.toLowerCase()))
-                    .map((api) => {
-                      const isSubscribed = subscriptions.some(sub => sub.api?._id === api._id);
-                      return (
+                    {active && (
+                      <motion.div
+                        layoutId="sidebarPill"
+                        style={{
+                          position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
+                          width: 3, height: 20, borderRadius: 4, background: G.blue,
+                        }}
+                      />
+                    )}
+                    <tab.icon size={18} />
+                    <span className="nav-btn-label">{tab.label}</span>
+                  </motion.button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="sidebar-mobile-bottom" style={{ padding: "16px 12px", borderTop: `1px solid ${G.border}` }}>
+            <motion.button
+              whileHover={{ x: 3 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleLogout}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                width: "100%", padding: "11px 16px", borderRadius: 14, border: "none",
+                background: "transparent", color: G.red, fontWeight: 500, fontSize: 14,
+                cursor: "pointer",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = `${G.red}12`}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <LogOut size={18} /> Sign Out
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* ── MAIN CONTENT ── */}
+        <div
+          className="main-content"
+          style={{ flex: 1, overflowY: "auto", padding: "40px 48px", scrollbarWidth: "thin", scrollbarColor: `${G.border} transparent` }}
+        >
+          <AnimatePresence mode="wait">
+
+            {/* ── DASHBOARD TAB ── */}
+            {activeTab === "dashboard" && (
+              <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+                <motion.header initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 36 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                    <motion.div animate={{ rotate: [0, 20, -20, 0] }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}>
+                      <Sparkles size={22} color={G.blue} />
+                    </motion.div>
+                    <h1 style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: 0 }}>Welcome Back</h1>
+                  </div>
+                  <p style={{ color: G.textSecondary, margin: 0, fontSize: 15 }}>Here's what's happening with your APIs today.</p>
+                </motion.header>
+
+                <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 28 }}>
+                  <StatCard label="Total Subscriptions" value={totalSubs} color={G.blue} icon={Layers} delay={0} />
+                  <StatCard label="Total Usage" value={totalUsage} color={G.purple} icon={TrendingUp} delay={0.08} />
+                  <StatCard label="Active APIs" value={activeSubs} color={G.teal} icon={Wifi} delay={0.16} />
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.24 }}
+                  style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "28px 32px" }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: `${G.blue}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Activity size={16} color={G.blue} />
+                    </div>
+                    <h2 style={{ fontSize: 16, fontWeight: 600, color: G.textPrimary, margin: 0 }}>Recent Activity</h2>
+                  </div>
+                  {recentSubs.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "40px 0" }}>
+                      <Bell size={40} color={G.textMuted} style={{ marginBottom: 12 }} />
+                      <p style={{ color: G.textMuted, margin: 0 }}>No recent subscriptions found.</p>
+                    </div>
+                  ) : (
+                    <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {recentSubs.map((sub) => (
                         <motion.div
-                          key={api._id}
+                          key={sub._id}
                           variants={staggerChild}
-                          whileHover={{ y: -2, borderColor: G.border.replace("0.08", "0.18") }}
+                          whileHover={{ x: 4 }}
                           style={{
-                            background: G.surfaceAlt,
-                            border: `1px solid ${G.border}`,
-                            borderRadius: 24, padding: "28px 32px",
-                            transition: "border-color 0.2s, box-shadow 0.2s",
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            padding: "14px 16px", borderRadius: 14,
+                            border: `1px solid transparent`, cursor: "default", transition: "all 0.2s",
                           }}
-                          onMouseEnter={e => e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.1)"}
-                          onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; e.currentTarget.style.borderColor = G.border; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
                         >
-                          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                            <div style={{ width: 44, height: 44, borderRadius: 14, background: G.blueGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                              {api.name.charAt(0)}
+                          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: 12, background: G.blueGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#fff" }}>
+                              {sub.api?.name?.charAt(0)}
                             </div>
                             <div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: G.textPrimary }}>{api.name}</h3>
-                                <span style={{
-                                  display: "flex", alignItems: "center", gap: 4,
-                                  fontSize: 10, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700,
-                                  padding: "3px 10px", borderRadius: 20,
-                                  background: api.isActive ? `${G.teal}18` : `${G.red}18`,
-                                  color: api.isActive ? G.teal : G.red,
-                                }}>
-                                  <motion.div
-                                    animate={api.isActive ? { scale: [1, 1.4, 1] } : {}}
-                                    transition={{ repeat: Infinity, duration: 1.5 }}
-                                    style={{ width: 6, height: 6, borderRadius: "50%", background: api.isActive ? G.teal : G.red }}
-                                  />
-                                  {api.isActive ? "Live" : "Down"}
-                                </span>
-                              </div>
-                              <p style={{ margin: "2px 0 0", fontSize: 12, color: G.blue, fontFamily: "monospace" }}>
-                                <Code2 size={11} style={{ verticalAlign: "middle", marginRight: 4 }} />{api.endpoint}
+                              <p style={{ margin: 0, fontWeight: 600, color: G.textPrimary, fontSize: 14 }}>{sub.api?.name}</p>
+                              <p style={{ margin: 0, fontSize: 11, color: G.blue, textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{sub.plan?.name}</p>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12, color: G.textMuted }}>{new Date(sub.expiresAt).toLocaleDateString()}</span>
+                            <ChevronRight size={14} color={G.textMuted} />
+                          </div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* ── EXPLORE TAB ── */}
+            {activeTab === "explore" && (
+              <motion.div key="explore" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+
+                {/* Header */}
+                <div
+                  className="explore-header"
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 28 }}
+                >
+                  <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+                    <h1 style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 4px" }}>
+                      Explore Marketplace
+                    </h1>
+                    <p style={{ margin: 0, fontSize: 14, color: G.textSecondary }}>
+                      {apis.length} API{apis.length !== 1 ? "s" : ""} available · {apis.filter(a => a.isActive).length} live
+                    </p>
+                  </motion.div>
+
+                  <motion.div
+                    className="explore-search"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ position: "relative", width: 320, flexShrink: 0 }}
+                  >
+                    <Search style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} size={16} color={G.textMuted} />
+                    <input
+                      type="text"
+                      placeholder="Search APIs by name..."
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      style={{
+                        width: "100%", background: "#FFFFFF",
+                        border: `1px solid ${G.border}`, borderRadius: 14,
+                        padding: "11px 16px 11px 40px", color: G.textPrimary,
+                        fontSize: 14, outline: "none", boxSizing: "border-box",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                      }}
+                      onFocus={e => { e.target.style.borderColor = G.blue + "66"; e.target.style.boxShadow = `0 0 0 3px ${G.blue}14`; }}
+                      onBlur={e => { e.target.style.borderColor = G.border; e.target.style.boxShadow = "0 1px 4px rgba(0,0,0,0.04)"; }}
+                    />
+                  </motion.div>
+                </div>
+
+                {/* Stats row */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}
+                >
+                  {[
+                    { label: "Total APIs", value: apis.length, color: G.blue, bg: `${G.blue}10` },
+                    { label: "Live Now", value: apis.filter(a => a.isActive).length, color: G.teal, bg: `${G.teal}10` },
+                    { label: "Your Subscriptions", value: subscriptions.length, color: G.purple, bg: `${G.purple}10` },
+                  ].map(stat => (
+                    <div key={stat.label} style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 16px", borderRadius: 20,
+                      background: stat.bg,
+                      border: `1px solid ${stat.color}22`,
+                    }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: stat.color }}>{stat.value}</span>
+                      <span style={{ fontSize: 12, color: G.textSecondary, fontWeight: 500 }}>{stat.label}</span>
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* API List */}
+                <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {filteredApis.length === 0 ? (
+                    <motion.div
+                      variants={staggerChild}
+                      style={{
+                        background: "#FFFFFF",
+                        border: `1px solid ${G.border}`,
+                        borderRadius: 24,
+                        padding: "80px 40px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Search size={44} color={G.textMuted} style={{ marginBottom: 16 }} />
+                      <p style={{ color: G.textPrimary, fontWeight: 600, fontSize: 16, margin: "0 0 8px" }}>No APIs found</p>
+                      <p style={{ color: G.textMuted, margin: 0, fontSize: 14 }}>Try adjusting your search query.</p>
+                    </motion.div>
+                  ) : (
+                    filteredApis.map((api) => {
+                      const isSubscribed = subscriptions.some(sub => sub.api?._id === api._id);
+                      return (
+                        <ApiCard
+                          key={api._id}
+                          api={api}
+                          isSubscribed={isSubscribed}
+                          subLoading={subLoading}
+                          setConfirmSubscribe={setConfirmSubscribe}
+                        />
+                      );
+                    })
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* ── SUBSCRIPTIONS TAB ── */}
+            {activeTab === "subscriptions" && (
+              <motion.div key="subscriptions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 28 }}>
+                  <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+                    <h1 style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 4px" }}>Active Subscriptions</h1>
+                    <p style={{ margin: 0, fontSize: 14, color: G.textSecondary }}>Manage your API plans, track usage, and access integration keys.</p>
+                  </motion.div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 20, background: `${G.teal}18`, color: G.teal, display: "flex", alignItems: "center", gap: 5 }}>
+                      <Wifi size={12} /> {activeSubs} active
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 20, background: `${G.red}18`, color: G.red, display: "flex", alignItems: "center", gap: 5 }}>
+                      <AlertTriangle size={12} /> {totalSubs - activeSubs} expired
+                    </span>
+                  </div>
+                </div>
+
+                {subPageLoading ? (
+                  <PageLoader label="Fetching your subscriptions..." />
+                ) : subscriptions.length === 0 ? (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "80px 40px", textAlign: "center" }}>
+                    <CreditCard size={44} color={G.textMuted} style={{ marginBottom: 16 }} />
+                    <p style={{ color: G.textMuted, margin: 0 }}>No subscriptions yet. Explore the marketplace!</p>
+                  </motion.div>
+                ) : (
+                  <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {subscriptions.map((sub) => {
+                      const total = sub.requestLimitSnapshot || sub.plan?.requestLimit || 0;
+                      const used = sub.usedRequests || 0;
+                      const percent = total ? Math.min((used / total) * 100, 100) : 0;
+                      const isExpired = new Date(sub.expiresAt) < new Date();
+                      const apiPlans = apis.find(a => a._id === sub.api?._id)?.plans || [];
+                      const barColor = isExpired ? G.red : percent > 85 ? G.red : percent > 60 ? G.amber : G.teal;
+                      const code = `fetch("${import.meta.env.VITE_API_URL}/use/${sub.api?.endpoint}", {\n  method: "${sub.api?.method}",\n  headers: {\n    "Content-Type": "application/json",\n    "x-api-key": "${user?.apiKey}"\n  }\n})\n.then(res => res.json())\n.then(data => console.log(data));`;
+
+                      return (
+                        <motion.div
+                          key={sub._id}
+                          variants={staggerChild}
+                          whileHover={{ y: -2 }}
+                          style={{
+                            background: G.surfaceAlt,
+                            border: `1px solid ${isExpired ? G.red + "44" : G.border}`,
+                            borderRadius: 24, padding: "28px 32px",
+                            opacity: isExpired ? 0.75 : 1, transition: "box-shadow 0.2s",
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.09)"}
+                          onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+                        >
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18, flexWrap: "wrap" }}>
+                            <div style={{ width: 46, height: 46, borderRadius: 14, background: G.blueGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                              {sub.api?.name?.charAt(0)}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ margin: "0 0 2px", fontSize: 16, fontWeight: 700, color: G.textPrimary }}>{sub.api?.name}</p>
+                              <p style={{ margin: 0, fontSize: 12, color: G.textSecondary }}>
+                                {sub.plan?.name} · ₹{sub.plan?.price}/mo · {isExpired ? "Expired" : "Renews"} {new Date(sub.expiresAt).toLocaleDateString()}
                               </p>
+                            </div>
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, flexShrink: 0,
+                              display: "flex", alignItems: "center", gap: 5,
+                              background: isExpired ? `${G.red}18` : `${G.teal}18`,
+                              color: isExpired ? G.red : G.teal,
+                            }}>
+                              {isExpired ? <><AlertTriangle size={11} /> Expired</> : <><CheckCircle2 size={11} /> Active</>}
+                            </span>
+                          </div>
+
+                          {isExpired ? (
+                            <div style={{ background: `${G.red}10`, border: `1px solid ${G.red}30`, borderRadius: 12, padding: "10px 14px", fontSize: 12, color: G.red, display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                              <AlertTriangle size={14} /> This subscription has expired. Renew to restore API access.
+                            </div>
+                          ) : (
+                            <div style={{ background: `${G.blue}0f`, border: `1px solid ${G.blue}30`, borderRadius: 12, padding: "10px 14px", fontSize: 12, color: G.blue, display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                              <ShieldCheck size={14} /> Send your API key in the <strong>&nbsp;x-api-key&nbsp;</strong> header with every request. Never expose it in client-side code.
+                            </div>
+                          )}
+
+                          {!isExpired && (
+                            <>
+                              <p style={{ fontSize: 11, fontWeight: 600, color: G.textMuted, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 6 }}>
+                                <Zap size={12} /> Integration Details
+                              </p>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 8, marginBottom: 16 }}>
+                                {[
+                                  { icon: Globe, label: "Base URL", val: `${import.meta.env.VITE_API_URL}/use` },
+                                  { icon: Code2, label: "Endpoint", val: sub.api?.endpoint },
+                                  { icon: Activity, label: "Method", val: sub.api?.method },
+                                  { icon: Lock, label: "API Key", val: user?.apiKey, copy: true },
+                                ].map(({ icon: Icon, label, val, copy }) => (
+                                  <div key={label} style={{ background: "#F0F2F5", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+                                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${G.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                      <Icon size={13} color={G.blue} />
+                                    </div>
+                                    <div style={{ minWidth: 0 }}>
+                                      <p style={{ margin: 0, fontSize: 10, color: G.textMuted, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600 }}>{label}</p>
+                                      <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: G.textPrimary, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{val}</p>
+                                    </div>
+                                    {copy && (
+                                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => { navigator.clipboard.writeText(val || ""); showToast("API key copied!"); }}
+                                        style={{ background: "none", border: "none", cursor: "pointer", color: G.blue, padding: 0, marginLeft: "auto", flexShrink: 0 }}>
+                                        <Copy size={13} />
+                                      </motion.button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              <p style={{ fontSize: 11, fontWeight: 600, color: G.textMuted, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 6 }}>
+                                <Code2 size={12} /> Quick Start
+                              </p>
+                              <div style={{ background: "#111827", borderRadius: 14, padding: "14px 18px", fontFamily: "monospace", fontSize: 12, color: "#E2E8F0", lineHeight: 1.7, overflowX: "auto", position: "relative", marginBottom: 16 }}>
+                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                  onClick={() => { navigator.clipboard.writeText(code); showToast("Code copied!"); }}
+                                  style={{ position: "absolute", top: 10, right: 12, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, padding: "4px 8px", cursor: "pointer", color: "#94A3B8", display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}>
+                                  <Copy size={11} /> Copy
+                                </motion.button>
+                                <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{code}</pre>
+                              </div>
+                            </>
+                          )}
+
+                          <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, color: G.textMuted, display: "flex", alignItems: "center", gap: 5 }}>
+                                <BarChart3 size={12} /> Request Usage
+                              </span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: percent > 85 ? G.red : G.textPrimary }}>
+                                {used.toLocaleString()} / {total.toLocaleString()}
+                              </span>
+                            </div>
+                            <div style={{ height: 6, background: "rgba(0,0,0,0.07)", borderRadius: 4, overflow: "hidden" }}>
+                              <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                                style={{ height: "100%", background: barColor, borderRadius: 4 }} />
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 11, color: G.textMuted }}>
+                              <span>{Math.round(percent)}% used</span>
+                              <span>{(total - used).toLocaleString()} remaining</span>
                             </div>
                           </div>
 
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginTop: 20 }}>
-                            {api.plans?.map(plan => (
-                              <motion.div
-                                key={plan._id}
-                                whileHover={{ scale: 1.02 }}
-                                style={{
-                                  background: "#F8F9FA",
-                                  border: `1px solid ${G.border}`,
-                                  borderRadius: 18, padding: "18px 20px",
-                                  display: "flex", flexDirection: "column", gap: 4,
-                                }}
-                              >
-                                <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: G.textMuted, fontWeight: 700 }}>{plan.name}</span>
-                                <span style={{ fontSize: 22, fontWeight: 700, color: G.textPrimary }}>₹{plan.price}</span>
-                                <span style={{ fontSize: 12, color: G.textSecondary }}>{plan.requestLimit.toLocaleString()} requests</span>
-                                <motion.button
-                                  whileTap={{ scale: 0.96 }}
-                                  onClick={() => {
-                                    if (!api.isActive) return;
-
-                                    setConfirmSubscribe({
-                                      show: true,
-                                      already: isSubscribed,
-                                      planId: isSubscribed ? null : plan._id,
-                                      plan,
-                                      api
-                                    });
-                                  }}
-                                  disabled={subLoading === plan._id || !api.isActive}
-                                  style={{
-                                    marginTop: 12, width: "100%", padding: "9px 0", borderRadius: 12, border: "none",
-                                    background: !api.isActive ? "rgba(0,0,0,0.06)" :
-                                      isSubscribed ? `${G.teal}18` : G.blueGrad,
-                                    color: !api.isActive ? G.textMuted :
-                                      isSubscribed ? G.teal : "#fff",
-                                    fontWeight: 700, fontSize: 13, cursor: !api.isActive ? "not-allowed" : "pointer",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                                    boxShadow: (!api.isActive || isSubscribed) ? "none" : "0 4px 14px rgba(66,133,244,0.35)",
-                                  }}
-                                >
-                                  {subLoading === plan._id
-                                    ? <GemSpinner size={16} />
-                                    : !api.isActive ? "Unavailable"
-                                      : isSubscribed ? <><CheckCircle2 size={13} /> Active</>
-                                        : "Subscribe"}
+                          {apiPlans.filter(p => p._id !== sub.plan?._id).length > 0 && (
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+                              {apiPlans.filter(p => p._id !== sub.plan?._id).map(plan => (
+                                <motion.button key={plan._id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                                  onClick={() => handleUpgrade(plan._id, plan.price, sub.plan?.price)}
+                                  style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 10, border: `1px solid ${G.purple}40`, background: `${G.purple}10`, color: G.purple, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                                  <ArrowUpRight size={12} /> Upgrade to {plan.name}
                                 </motion.button>
-                              </motion.div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          )}
                         </motion.div>
                       );
-                    })
+                    })}
+                  </motion.div>
                 )}
               </motion.div>
-            </motion.div>
-          )}
+            )}
 
-          {/* ── SUBSCRIPTIONS TAB ── */}
-         {activeTab === "subscriptions" && (
-  <motion.div key="subscriptions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-
-    {/* Header */}
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 28 }}>
-      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 4px" }}>Active Subscriptions</h1>
-        <p style={{ margin: 0, fontSize: 14, color: G.textSecondary }}>Manage your API plans, track usage, and access integration keys.</p>
-      </motion.div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 20, background: `${G.teal}18`, color: G.teal, display: "flex", alignItems: "center", gap: 5 }}>
-          <Wifi size={12} /> {activeSubs} active
-        </span>
-        <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 20, background: `${G.red}18`, color: G.red, display: "flex", alignItems: "center", gap: 5 }}>
-          <AlertTriangle size={12} /> {totalSubs - activeSubs} expired
-        </span>
-      </div>
-    </div>
-
-    {subPageLoading ? (
-      <PageLoader label="Fetching your subscriptions..." />
-    ) : subscriptions.length === 0 ? (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "80px 40px", textAlign: "center" }}>
-        <CreditCard size={44} color={G.textMuted} style={{ marginBottom: 16 }} />
-        <p style={{ color: G.textMuted, margin: 0 }}>No subscriptions yet. Explore the marketplace!</p>
-      </motion.div>
-    ) : (
-      <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {subscriptions.map((sub) => {
-          const total = sub.requestLimitSnapshot || sub.plan?.requestLimit || 0;
-          const used = sub.usedRequests || 0;
-          const percent = total ? Math.min((used / total) * 100, 100) : 0;
-          const isExpired = new Date(sub.expiresAt) < new Date();
-          const apiPlans = apis.find(a => a._id === sub.api?._id)?.plans || [];
-          const barColor = isExpired ? G.red : percent > 85 ? G.red : percent > 60 ? G.amber : G.teal;
-          const code = `fetch("${import.meta.env.VITE_API_URL}/use/${sub.api?.endpoint}", {\n  method: "${sub.api?.method}",\n  headers: {\n    "Content-Type": "application/json",\n    "x-api-key": "${user?.apiKey}"\n  }\n})\n.then(res => res.json())\n.then(data => console.log(data));`;
-
-          return (
-            <motion.div
-              key={sub._id}
-              variants={staggerChild}
-              whileHover={{ y: -2 }}
-              style={{
-                background: G.surfaceAlt,
-                border: `1px solid ${isExpired ? G.red + "44" : G.border}`,
-                borderRadius: 24,
-                padding: "28px 32px",
-                opacity: isExpired ? 0.75 : 1,
-                transition: "box-shadow 0.2s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.09)"}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
-            >
-              {/* ── Card Header ── */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18, flexWrap: "wrap" }}>
-                <div style={{ width: 46, height: 46, borderRadius: 14, background: G.blueGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                  {sub.api?.name?.charAt(0)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: "0 0 2px", fontSize: 16, fontWeight: 700, color: G.textPrimary }}>{sub.api?.name}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: G.textSecondary }}>
-                    {sub.plan?.name} · ₹{sub.plan?.price}/mo · {isExpired ? "Expired" : "Renews"} {new Date(sub.expiresAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, flexShrink: 0,
-                  display: "flex", alignItems: "center", gap: 5,
-                  background: isExpired ? `${G.red}18` : `${G.teal}18`,
-                  color: isExpired ? G.red : G.teal,
-                }}>
-                  {isExpired ? <><AlertTriangle size={11} /> Expired</> : <><CheckCircle2 size={11} /> Active</>}
-                </span>
-              </div>
-
-              {/* ── Instruction banner ── */}
-              {isExpired ? (
-                <div style={{ background: `${G.red}10`, border: `1px solid ${G.red}30`, borderRadius: 12, padding: "10px 14px", fontSize: 12, color: G.red, display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                  <AlertTriangle size={14} /> This subscription has expired. Renew to restore API access.
-                </div>
-              ) : (
-                <div style={{ background: `${G.blue}0f`, border: `1px solid ${G.blue}30`, borderRadius: 12, padding: "10px 14px", fontSize: 12, color: G.blue, display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                  <ShieldCheck size={14} /> Send your API key in the <strong>&nbsp;x-api-key&nbsp;</strong> header with every request. Never expose it in client-side code.
-                </div>
-              )}
-
-              {/* ── Integration details grid ── */}
-              {!isExpired && (
-                <>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: G.textMuted, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 6 }}>
-                    <Zap size={12} /> Integration Details
-                  </p>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 8, marginBottom: 16 }}>
-                    {[
-                      { icon: Globe, label: "Base URL", val: `${import.meta.env.VITE_API_URL}/use` },
-                      { icon: Code2, label: "Endpoint", val: sub.api?.endpoint },
-                      { icon: Activity, label: "Method", val: sub.api?.method },
-                      { icon: Lock, label: "API Key", val: user?.apiKey, copy: true },
-                    ].map(({ icon: Icon, label, val, copy }) => (
-                      <div key={label} style={{ background: "#F0F2F5", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 8, background: `${G.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <Icon size={13} color={G.blue} />
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: 10, color: G.textMuted, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600 }}>{label}</p>
-                          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: G.textPrimary, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{val}</p>
-                        </div>
-                        {copy && (
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => { navigator.clipboard.writeText(val || ""); showToast("API key copied!"); }}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: G.blue, padding: 0, marginLeft: "auto", flexShrink: 0 }}>
-                            <Copy size={13} />
-                          </motion.button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* ── Code snippet ── */}
-                  <p style={{ fontSize: 11, fontWeight: 600, color: G.textMuted, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 6 }}>
-                    <Code2 size={12} /> Quick Start
-                  </p>
-                  <div style={{ background: "#111827", borderRadius: 14, padding: "14px 18px", fontFamily: "monospace", fontSize: 12, color: "#E2E8F0", lineHeight: 1.7, overflowX: "auto", position: "relative", marginBottom: 16 }}>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                      onClick={() => { navigator.clipboard.writeText(code); showToast("Code copied!"); }}
-                      style={{ position: "absolute", top: 10, right: 12, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, padding: "4px 8px", cursor: "pointer", color: "#94A3B8", display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}>
-                      <Copy size={11} /> Copy
-                    </motion.button>
-                    <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{code}</pre>
-                  </div>
-                </>
-              )}
-
-              {/* ── Usage bar ── */}
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, color: G.textMuted, display: "flex", alignItems: "center", gap: 5 }}>
-                    <BarChart3 size={12} /> Request Usage
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: percent > 85 ? G.red : G.textPrimary }}>
-                    {used.toLocaleString()} / {total.toLocaleString()}
-                  </span>
-                </div>
-                <div style={{ height: 6, background: "rgba(0,0,0,0.07)", borderRadius: 4, overflow: "hidden" }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ height: "100%", background: barColor, borderRadius: 4 }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 11, color: G.textMuted }}>
-                  <span>{Math.round(percent)}% used</span>
-                  <span>{(total - used).toLocaleString()} remaining</span>
-                </div>
-              </div>
-
-              {/* ── Upgrade buttons ── */}
-              {apiPlans.filter(p => p._id !== sub.plan?._id).length > 0 && (
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
-                  {apiPlans.filter(p => p._id !== sub.plan?._id).map(plan => (
-                    <motion.button key={plan._id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                      onClick={() => handleUpgrade(plan._id, plan.price, sub.plan?.price)}
-                      style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 10, border: `1px solid ${G.purple}40`, background: `${G.purple}10`, color: G.purple, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                      <ArrowUpRight size={12} /> Upgrade to {plan.name}
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          );
-        })}
-      </motion.div>
-    )}
-  </motion.div>
-)}
-          {/* ── ANALYTICS TAB ── */}
-          {activeTab === "usage" && (
-            <motion.div key="usage" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <motion.h1 initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 32px" }}>
-                Real-time Analytics
-              </motion.h1>
-              {usageLoading ? (
-                <PageLoader label="Fetching analytics data..." />
-              ) : usageData.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "80px 40px", textAlign: "center" }}>
-                  <BarChart2 size={44} color={G.textMuted} style={{ marginBottom: 16 }} />
-                  <p style={{ color: G.textMuted, margin: 0 }}>No analytics data yet.</p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  variants={staggerParent} initial="initial" animate="animate"
-                  style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}
-                >
-                  {usageData.map((item, i) => {
-                    const percent = item.limit ? Math.min((item.used / item.limit) * 100, 100) : 0;
-                    const bars = [...Array(24)].map(() => Math.random());
-                    return (
-                      <motion.div
-                        key={i}
-                        variants={staggerChild}
-                        whileHover={{ y: -3 }}
-                        style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "24px 28px" }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: G.textPrimary }}>{item.apiName}</h3>
-                          <span style={{ fontSize: 12, fontWeight: 700, background: `${G.blue}18`, color: G.blue, padding: "4px 12px", borderRadius: 20 }}>
-                            {item.used} calls
-                          </span>
-                        </div>
-                        <div style={{ height: 72, display: "flex", alignItems: "flex-end", gap: 2, marginBottom: 16 }}>
-                          {bars.map((h, idx) => (
-                            <motion.div
-                              key={idx}
-                              initial={{ height: 0 }}
-                              animate={{ height: `${h * 100}%` }}
-                              transition={{ delay: idx * 0.02, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                              style={{
-                                flex: 1, borderRadius: "2px 2px 0 0",
-                                background: h > 0.7 ? G.purple : h > 0.4 ? G.blue : `${G.blue}40`,
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <div style={{ height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 4, overflow: "hidden" }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percent}%` }}
-                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                            style={{ height: "100%", background: G.blueGrad, borderRadius: 4 }}
-                          />
-                        </div>
-                        <p style={{ textAlign: "right", fontSize: 11, color: G.textMuted, marginTop: 6, margin: "6px 0 0" }}>{Math.round(percent)}% used</p>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ── SETTINGS TAB ── */}
-          {activeTab === "settings" && (
-            <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ maxWidth: 640 }}>
-              <motion.h1 initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 32px" }}>
-                Account Settings
-              </motion.h1>
-
-              <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {/* Security */}
-                <motion.section variants={staggerChild} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "28px 32px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 12, background: `${G.teal}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Shield size={18} color={G.teal} />
-                    </div>
-                    <h2 style={{ fontSize: 16, fontWeight: 700, color: G.textPrimary, margin: 0 }}>Security & Access</h2>
-                  </div>
-                  <p style={{ fontSize: 13, color: G.textSecondary, margin: "0 0 18px" }}>
-                    Linked to: <span style={{ color: G.textPrimary, fontWeight: 600 }}>{JSON.parse(localStorage.getItem("user") || "{}")?.email}</span>
-                  </p>
-                  <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: G.textMuted, fontWeight: 700, margin: "0 0 8px" }}>Master API Key</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#F8F9FA", border: `1px solid ${G.border}`, borderRadius: 14, padding: "12px 16px" }}>
-                    <span style={{ flex: 1, fontFamily: "monospace", fontSize: 13, color: G.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {JSON.parse(localStorage.getItem("user") || "{}")?.apiKey || "••••••••••••••••••••"}
-                    </span>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => { navigator.clipboard.writeText(JSON.parse(localStorage.getItem("user") || "{}")?.apiKey || ""); showToast("Key Copied!"); }}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: G.blue, padding: 4 }}
-                    >
-                      <Copy size={16} />
-                    </motion.button>
-                  </div>
-                </motion.section>
-
-                {/* Password */}
-                <motion.section variants={staggerChild} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "28px 32px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 12, background: `${G.purple}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Lock size={18} color={G.purple} />
-                    </div>
-                    <h2 style={{ fontSize: 16, fontWeight: 700, color: G.textPrimary, margin: 0 }}>Password Management</h2>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {[
-                      { val: oldPassword, set: setOldPassword, ph: "Current password" },
-                      { val: newPassword, set: setNewPassword, ph: "New password" },
-                    ].map(({ val, set, ph }) => (
-                      <input
-                        key={ph}
-                        type="password"
-                        placeholder={ph}
-                        value={val}
-                        onChange={e => set(e.target.value)}
-                        style={{
-                          background: "#F8F9FA", border: `1px solid ${G.border}`,
-                          borderRadius: 14, padding: "12px 16px", color: G.textPrimary,
-                          fontSize: 14, outline: "none",
-                        }}
-                        onFocus={e => e.target.style.borderColor = G.purple + "66"}
-                        onBlur={e => e.target.style.borderColor = G.border}
-                      />
-                    ))}
-                    <motion.button
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleChangePassword}
-                      style={{
-                        padding: "13px 0", borderRadius: 14, border: "none",
-                        background: "linear-gradient(135deg, #6B4EE8 0%, #9B6BF5 100%)",
-                        color: "#fff", fontWeight: 700, fontSize: 14,
-                        cursor: "pointer", boxShadow: "0 4px 18px rgba(107,78,232,0.4)",
-                      }}
-                    >
-                      Update Credentials
-                    </motion.button>
-                  </div>
-                </motion.section>
-
-                {/* Theme */}
-                <motion.section
-                  variants={staggerChild}
-                  style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                >
-                  <div>
-                    <h2 style={{ fontSize: 16, fontWeight: 700, color: G.textPrimary, margin: "0 0 4px" }}>Visual Theme</h2>
-                    <p style={{ fontSize: 13, color: G.textSecondary, margin: 0 }}>Dark mode is currently in beta.</p>
-                  </div>
-                  <motion.button
-                    whileHover={{ rotate: 20, scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => document.body.classList.toggle("dark")}
-                    style={{
-                      width: 44, height: 44, borderRadius: 14, border: `1px solid ${G.border}`,
-                      background: "rgba(0,0,0,0.04)", cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}
-                  >
-                    <Moon size={20} color={G.blue} />
-                  </motion.button>
-                </motion.section>
+            {/* ── ANALYTICS TAB ── */}
+            {activeTab === "usage" && (
+              <motion.div key="usage" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+                <motion.h1 initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 32px" }}>
+                  Real-time Analytics
+                </motion.h1>
+                {usageLoading ? (
+                  <PageLoader label="Fetching analytics data..." />
+                ) : usageData.length === 0 ? (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "80px 40px", textAlign: "center" }}>
+                    <BarChart2 size={44} color={G.textMuted} style={{ marginBottom: 16 }} />
+                    <p style={{ color: G.textMuted, margin: 0 }}>No analytics data yet.</p>
+                  </motion.div>
+                ) : (
+                  <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 16 }}>
+                    {usageData.map((item, i) => {
+                      const percent = item.limit ? Math.min((item.used / item.limit) * 100, 100) : 0;
+                      const bars = [...Array(24)].map(() => Math.random());
+                      return (
+                        <motion.div key={i} variants={staggerChild} whileHover={{ y: -3 }} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "24px 28px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: G.textPrimary }}>{item.apiName}</h3>
+                            <span style={{ fontSize: 12, fontWeight: 700, background: `${G.blue}18`, color: G.blue, padding: "4px 12px", borderRadius: 20 }}>{item.used} calls</span>
+                          </div>
+                          <div style={{ height: 72, display: "flex", alignItems: "flex-end", gap: 2, marginBottom: 16 }}>
+                            {bars.map((h, idx) => (
+                              <motion.div key={idx} initial={{ height: 0 }} animate={{ height: `${h * 100}%` }} transition={{ delay: idx * 0.02, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                                style={{ flex: 1, borderRadius: "2px 2px 0 0", background: h > 0.7 ? G.purple : h > 0.4 ? G.blue : `${G.blue}40` }} />
+                            ))}
+                          </div>
+                          <div style={{ height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 4, overflow: "hidden" }}>
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                              style={{ height: "100%", background: G.blueGrad, borderRadius: 4 }} />
+                          </div>
+                          <p style={{ textAlign: "right", fontSize: 11, color: G.textMuted, marginTop: 6, margin: "6px 0 0" }}>{Math.round(percent)}% used</p>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
               </motion.div>
-            </motion.div>
-          )}
+            )}
 
-        </AnimatePresence>
+            {/* ── SETTINGS TAB ── */}
+            {activeTab === "settings" && (
+              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ maxWidth: 640 }}>
+                <motion.h1 initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 28, fontWeight: 700, color: G.textPrimary, margin: "0 0 32px" }}>
+                  Account Settings
+                </motion.h1>
+                <motion.div variants={staggerParent} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <motion.section variants={staggerChild} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "28px 32px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 12, background: `${G.teal}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Shield size={18} color={G.teal} />
+                      </div>
+                      <h2 style={{ fontSize: 16, fontWeight: 700, color: G.textPrimary, margin: 0 }}>Security & Access</h2>
+                    </div>
+                    <p style={{ fontSize: 13, color: G.textSecondary, margin: "0 0 18px" }}>
+                      Linked to: <span style={{ color: G.textPrimary, fontWeight: 600 }}>{JSON.parse(localStorage.getItem("user") || "{}")?.email}</span>
+                    </p>
+                    <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: G.textMuted, fontWeight: 700, margin: "0 0 8px" }}>Master API Key</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#F8F9FA", border: `1px solid ${G.border}`, borderRadius: 14, padding: "12px 16px" }}>
+                      <span style={{ flex: 1, fontFamily: "monospace", fontSize: 13, color: G.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {JSON.parse(localStorage.getItem("user") || "{}")?.apiKey || "••••••••••••••••••••"}
+                      </span>
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                        onClick={() => { navigator.clipboard.writeText(JSON.parse(localStorage.getItem("user") || "{}")?.apiKey || ""); showToast("Key Copied!"); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: G.blue, padding: 4 }}>
+                        <Copy size={16} />
+                      </motion.button>
+                    </div>
+                  </motion.section>
+
+                  <motion.section variants={staggerChild} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "28px 32px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 12, background: `${G.purple}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Lock size={18} color={G.purple} />
+                      </div>
+                      <h2 style={{ fontSize: 16, fontWeight: 700, color: G.textPrimary, margin: 0 }}>Password Management</h2>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {[
+                        { val: oldPassword, set: setOldPassword, ph: "Current password" },
+                        { val: newPassword, set: setNewPassword, ph: "New password" },
+                      ].map(({ val, set, ph }) => (
+                        <input key={ph} type="password" placeholder={ph} value={val} onChange={e => set(e.target.value)}
+                          style={{ background: "#F8F9FA", border: `1px solid ${G.border}`, borderRadius: 14, padding: "12px 16px", color: G.textPrimary, fontSize: 14, outline: "none" }}
+                          onFocus={e => e.target.style.borderColor = G.purple + "66"}
+                          onBlur={e => e.target.style.borderColor = G.border} />
+                      ))}
+                      <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={handleChangePassword}
+                        style={{ padding: "13px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6B4EE8 0%, #9B6BF5 100%)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: "0 4px 18px rgba(107,78,232,0.4)" }}>
+                        Update Credentials
+                      </motion.button>
+                    </div>
+                  </motion.section>
+
+                  <motion.section variants={staggerChild} style={{ background: G.surfaceAlt, border: `1px solid ${G.border}`, borderRadius: 24, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <h2 style={{ fontSize: 16, fontWeight: 700, color: G.textPrimary, margin: "0 0 4px" }}>Visual Theme</h2>
+                      <p style={{ fontSize: 13, color: G.textSecondary, margin: 0 }}>Dark mode is currently in beta.</p>
+                    </div>
+                    <motion.button whileHover={{ rotate: 20, scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                      onClick={() => document.body.classList.toggle("dark")}
+                      style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${G.border}`, background: "rgba(0,0,0,0.04)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Moon size={20} color={G.blue} />
+                    </motion.button>
+                  </motion.section>
+                </motion.div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
+        {/* ── TOAST ── */}
+        <Toast toast={toast} />
+
+        {/* ── MODAL ── */}
+        <GemModal
+          confirmUpgrade={confirmUpgrade}
+          confirmSubscribe={confirmSubscribe}
+          setConfirmUpgrade={setConfirmUpgrade}
+          setConfirmSubscribe={setConfirmSubscribe}
+          upgradeNow={upgradeNow}
+          handleSubscribe={handleSubscribe}
+          handlePayment={handlePayment}
+          subLoading={subLoading}
+          setSubLoading={setSubLoading}
+        />
       </div>
-
-      {/* ── TOAST ── */}
-      <Toast toast={toast} />
-
-      {/* ── MODAL ── */}
-      <GemModal
-  confirmUpgrade={confirmUpgrade}
-  confirmSubscribe={confirmSubscribe}
-  setConfirmUpgrade={setConfirmUpgrade}
-  setConfirmSubscribe={setConfirmSubscribe}
-  upgradeNow={upgradeNow}
-  handleSubscribe={handleSubscribe}
-  handlePayment={handlePayment}
-  subLoading={subLoading}
-  setSubLoading={setSubLoading}
-/>
-    </div>
+    </>
   );
 }
